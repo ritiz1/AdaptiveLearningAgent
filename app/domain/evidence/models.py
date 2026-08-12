@@ -14,3 +14,4 @@ class LearningEvidence:
     payload: dict[str, Any] = field(default_factory=dict)
     score: Optional[float] = None          # optional 0..1
     created_at: Optional[datetime] = None
+

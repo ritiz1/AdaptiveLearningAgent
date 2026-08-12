@@ -1,15 +1,29 @@
 from __future__ import annotations
 from app.ai.graph.state import WorkflowState
+from langchain_core.messages import HumanMessage, SystemMessage 
 
-def understand_request_node(state : WorkflowState) -> WorkflowState:
-    """LLM Call #1 (later): classify intent + target concept from user_message.
-    Phase 0: stub only. Returns placeholder values so the graph can run
-    end-to-end without an LLM.
-    """
-    # TODO Phase 1: call LLM with structured output (intent, target_concept),
-    return {
-        "intent" : "learn",
-        "target_concept" : state["user_message"],  #naive approach for now , we will improve this later 
-    }
+from app.ai.graph.state import WorkflowState
+from app.ai.llm_schemas.understand_request import RequestUnderstanding
+from app.infrastructure.llm.client import get_llm
 
 
+structured_llm = get_llm().with_structured_output(
+    RequestUnderstanding,
+    method="json_schema",
+    strict=True,
+)
+
+def understand_request_node(state: WorkflowState) -> dict:
+    result = structured_llm.invoke(
+        [
+            SystemMessage(
+                content=(
+                    "Analyze the learner's request. Classify the intent as "
+                    "learn, review, or debug. Extract only the concise target "
+                    "concept, not the full user message."
+                )
+            ),
+            HumanMessage(content=state["user_message"]),
+        ]
+    )
+    return result.model_dump()
