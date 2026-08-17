@@ -1,5 +1,5 @@
 from typing import TypedDict,Optional 
-
+from app.domain.learner import LearnerState 
 
 # We are defining a state for the graph for the overall workflow ; 
 
@@ -14,7 +14,7 @@ class WorkflowState(TypedDict):
     intent : Optional[str]
 
     # filled by the load-learner-state node : 
-    learner_state : Optional[str]
+    learner_state : Optional[LearnerState]
 
     #filled by tutor node : 
     tutor_response : Optional[str]
