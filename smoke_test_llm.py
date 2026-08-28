@@ -1,5 +1,6 @@
-from app.ai.graph import build_graph
-
+from app.ai.graph.build_graph import build_graph
+import logging
+logging.basicConfig(level=logging.INFO)
 
 graph = build_graph()
 tests = [
