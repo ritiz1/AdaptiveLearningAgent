@@ -6,7 +6,7 @@ graph = build_graph()
 tests = [
     "Teach me Python recursion",
     "Help me review Python recursion",
-    "Debug why my recursive function never stops",
+    "Debug why my recursive function never stops. ",
 ]
 
 for message in tests:
