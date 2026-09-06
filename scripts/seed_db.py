@@ -11,7 +11,7 @@ Run from the project root:
 
 from __future__ import annotations
 
-from app.infrastructure.db.engine import SessionLocal
+from app.infrastructure.db.engine import get_session_factory
 from app.infrastructure.db.models import LearnerProfile
 from app.services.learner_service.hardcoded import HardcodedLearnerService
 
@@ -24,7 +24,7 @@ def seed_learner_profiles() -> None:
 
     learner_service = HardcodedLearnerService()
 
-    with SessionLocal() as session:
+    with get_session_factory()() as session:
         for user_id in SEED_USER_IDS:
             if session.get(LearnerProfile, user_id) is not None:
                 print(f"skip   {user_id} (already present)")

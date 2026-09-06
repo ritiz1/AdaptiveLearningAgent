@@ -5,7 +5,7 @@ from typing import Any
 from langchain_core.tools import tool
 
 from app.ai.tools.serialization import to_jsonable
-from app.ai.tools.tool_context import safe_reads
+from app.ai.tools.tool_context import get_safe_reads
 
 @tool 
 def get_learner_state(user_id: str) -> Any :
@@ -17,7 +17,7 @@ def get_learner_state(user_id: str) -> Any :
     """
 
     #read the custom learnerstate object from the service . 
-    result = safe_reads.get_learner_state(user_id)
+    result = get_safe_reads().get_learner_state(user_id)
 
     #convert it into a dictionary that the LLM can understand . 
     return to_jsonable(result)
@@ -32,7 +32,7 @@ def get_mastery(user_id : str, concept_id : str) -> Any :
     """
 
     #ask the learner service for this user's concept mastery .
-    result = safe_reads.get_mastery(
+    result = get_safe_reads().get_mastery(
         
         user_id= user_id, 
         concept_id= concept_id)

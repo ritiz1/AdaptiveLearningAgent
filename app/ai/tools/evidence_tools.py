@@ -5,7 +5,7 @@ from typing import Any
 from langchain_core.tools import tool
 
 from app.ai.tools.serialization import to_jsonable
-from app.ai.tools.tool_context import safe_reads
+from app.ai.tools.tool_context import get_safe_reads
 
 @tool 
 def get_recent_evidence(
@@ -21,7 +21,7 @@ def get_recent_evidence(
 
 
     # Ask the evidence service for this learner's recent evidence.
-    result = safe_reads.get_recent_evidence(
+    result = get_safe_reads().get_recent_evidence(
         user_id=user_id,
         concept_id=concept_id,
         limit=limit,

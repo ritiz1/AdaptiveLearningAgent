@@ -28,12 +28,31 @@ A stateful adaptive tutoring agent built with **LangGraph** and **LangChain**. T
 | **Phase 0** | Architecture skeleton, domain models, service interfaces | Done |
 | **Phase 1** | Understand → Load State → Tutor (hardcoded learner profile) | Done |
 | **Phase 1B** | Tool-enabled Tutor with safe read-only tools (max 2 rounds) | Done |
-| **Phase 2** | PostgreSQL persistence | Next |
+| **Phase 2** | PostgreSQL persistence | In progress |
 | **Phase 3** | Concept resolver + `find_concept()` | Planned |
 | **Phase 4** | Diagnostic + uncertainty routing | Planned |
 | **Phase 5** | Evaluator + mastery engine | Planned |
 | **Phase 6** | Full adaptive routing loop | Partial (early prototype) |
 | **Phase 7–10** | Learning-style inference, streaming, Android, LangSmith | Planned |
+
+### Phase 2 detail
+
+Learner data now comes from PostgreSQL at runtime. Concepts and evidence are
+still hardcoded because their tables do not exist yet.
+
+| Piece | Status |
+|---|---|
+| PostgreSQL 16 in Docker with a persistent volume | Done |
+| SQLAlchemy engine, session factory, declarative `Base` | Done |
+| `learner_profiles` and `user_concept_states` tables | Done |
+| Alembic migration applied (`51ecff03db5c`) | Done |
+| Learner seed script | Done |
+| `LearnerRepository` returning domain objects | Done |
+| `PostgresLearnerService` behind the existing interface | Done |
+| Service container; node and tools share one backend | Done |
+| `PostgresConceptService` / `PostgresEvidenceService` | Not started |
+| `concepts`, `concept_edges`, `learning_evidence`, `sessions` tables | Not started |
+| LangGraph PostgreSQL checkpointer | Not started |
 
 ---
 
@@ -44,7 +63,7 @@ User Message
      |
 [Understand Request]        <- LLM Call #1 (structured output)
      |
-[Load Learner State]        <- Hardcoded service (Phase 1)
+[Load Learner State]        <- PostgresLearnerService (Phase 2)
      |
 [Detect Next Action]        <- Deterministic routing
      |
@@ -109,12 +128,23 @@ app/
 │   ├── evidence/              # LearningEvidence
 │   └── routing/               # TeachingAction, RoutingDecision
 ├── services/
-│   ├── learner_service/       # Interface + HardcodedLearnerService
+│   ├── container.py           # Composition root; selects the backend
+│   ├── learner_service/       # Interface + Hardcoded + Postgres
 │   ├── concept_service/       # Interface + HardcodedConceptService
 │   └── evidence_service/      # Interface + HardcodedEvidenceService
 └── infrastructure/
-    └── llm/
-        └── client.py          # Groq LLM client
+    ├── llm/
+    │   └── client.py          # Groq LLM client
+    └── db/
+        ├── base.py            # SQLAlchemy declarative Base
+        ├── engine.py          # Engine + SessionLocal
+        ├── models/            # LearnerProfile, UserConceptState
+        └── repositories/      # LearnerRepository
+
+alembic/                       # Migration environment + versions
+scripts/
+├── seed_db.py                 # Seed user-a and user-b profiles
+└── check_learner_repository.py  # Verify repository reads
 ```
 
 ---
@@ -126,7 +156,7 @@ app/
 | Agent orchestration | LangGraph |
 | LLM integration | LangChain + Groq |
 | Primary LLM | `openai/gpt-oss-120b` (Groq) |
-| Database (planned) | PostgreSQL + SQLAlchemy + Alembic |
+| Database | PostgreSQL 16 + SQLAlchemy + Alembic (Docker) |
 | Observability (planned) | LangSmith |
 | API (planned) | FastAPI |
 | Mobile (planned) | Android (Kotlin + Jetpack Compose) |
@@ -139,6 +169,7 @@ app/
 
 - Python 3.11+
 - Groq API key ([console.groq.com](https://console.groq.com))
+- Docker Desktop (for PostgreSQL)
 
 ### Install
 
@@ -159,6 +190,24 @@ Create `app/.env`:
 
 ```env
 GROQ_API_KEY=your_groq_api_key_here
+DATABASE_URL=postgresql+psycopg://postgres:devpassword@localhost:5432/adaptive_learning
+```
+
+### Database
+
+Start PostgreSQL, apply migrations, and seed the example learners:
+
+```bash
+docker start adaptive-learning-postgres
+
+python -m alembic upgrade head
+python -m scripts.seed_db
+```
+
+Verify the repository reads the seeded rows:
+
+```bash
+python -m scripts.check_learner_repository
 ```
 
 ---
@@ -171,7 +220,10 @@ From the project root:
 python smoke_test_llm.py
 ```
 
-Expected output (three routes):
+This runs all three routes for both test users, so personalization
+differences are visible in one pass.
+
+Expected output per user:
 
 ```
 Message: Teach me Python recursion
@@ -196,6 +248,10 @@ Response: <diagnostic question>
 |---|---|
 | `user-a` | Example-first, shallow depth, slow pacing |
 | `user-b` | Top-down, deep depth, code-heavy, fast pacing |
+
+Both are stored in `learner_profiles` and read from PostgreSQL at runtime.
+Set `LEARNER_BACKEND=hardcoded` in `app/.env` to fall back to the in-code
+Phase 1 data.
 
 ---
 
@@ -229,7 +285,7 @@ No write tools, web access, SQL, or filesystem tools are exposed to the LLM.
 - [x] Phase 0 — Architecture skeleton
 - [x] Phase 1 — Minimal stateful tutoring loop
 - [x] Phase 1B — Controlled tool-calling extension
-- [ ] Phase 2 — PostgreSQL learner state
+- [ ] Phase 2 — PostgreSQL learner state (schema, seed, and repository done)
 - [ ] Phase 3 — Concept resolver + sparse dependencies
 - [ ] Phase 4 — Diagnostic and uncertainty
 - [ ] Phase 5 — Evaluator + mastery engine

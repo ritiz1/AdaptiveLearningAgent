@@ -5,7 +5,7 @@ from typing import Any
 from langchain_core.tools import tool
 
 from app.ai.tools.serialization import to_jsonable
-from app.ai.tools.tool_context import safe_reads
+from app.ai.tools.tool_context import get_safe_reads
 
 
 @tool
@@ -21,7 +21,7 @@ def get_dependencies(
     """
 
     # Ask the concept service for this concept's prerequisites.
-    result = safe_reads.get_dependencies(
+    result = get_safe_reads().get_dependencies(
         concept_id=concept_id,
         max_depth=max_depth,
     )
