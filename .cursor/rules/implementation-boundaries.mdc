@@ -1,0 +1,46 @@
+---
+description: Split agent boilerplate work from developer-owned architecture decisions
+alwaysApply: true
+---
+
+# Implementation Boundaries
+
+Follow `adaptive_ai_learning_system_v1_2_architecture.pdf` and existing service interfaces. Extend the current design; do not rewrite it unless the developer asks.
+
+## Agent may implement (boilerplate)
+
+- SQLAlchemy models, Alembic migrations, repositories, seed scripts
+- Postgres service implementations behind existing interfaces
+- Repetitive wiring, exports, imports, and file scaffolding
+- Tool wrappers that call existing services without changing policy
+- Smoke tests, migration checks, and small verification scripts
+- README/docs updates when explicitly requested
+- Bug fixes that are clearly local and do not change architecture
+
+## Developer owns (stop and ask first)
+
+- Graph node boundaries, routing policy, and conditional edges
+- LangGraph state shape, checkpointer strategy, and session design
+- Mastery/confidence formulas, unknown-vs-zero semantics, and update rules
+- Prompt design, evaluator behavior, and LLM tool allow-lists
+- Concept resolution policy (`find_concept`, lazy creation, de-duplication)
+- Security, auth, secrets handling, and production deployment choices
+- Phase scope changes or skipping ahead in the roadmap
+
+If a task touches any item above, explain options briefly and wait for approval.
+
+## Hard rules
+
+- Nodes and tools must call services, never SQLAlchemy models directly
+- LLM tools are read-only unless the developer explicitly approves writes
+- Missing mastery row means unknown (`is_unknown=True`), not zero
+- Do not delete hardcoded services until Postgres replacements are tested
+- Do not modify unrelated files; keep diffs minimal
+- Do not commit, push, or change git config unless explicitly asked
+
+## Before finishing
+
+- Run relevant tests or smoke checks when behavior changed
+- Inspect migrations before applying them
+- Report assumptions, files changed, and anything left for the developer
+- If uncertain, ask instead of guessing
